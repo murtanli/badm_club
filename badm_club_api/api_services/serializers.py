@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TelegramUser, TrainingSubscription
+from .models import TelegramUser, TrainingSubscription, Gym, Trainer
 
 
 class TelegramUserSerializer(serializers.ModelSerializer):
@@ -29,3 +29,15 @@ class TrainingSubscriptionSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = TrainingSubscription
 		fields = ['id', 'name', 'count_training', 'description', 'price']
+
+
+class GymSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Gym
+		fields = ['id', 'name', 'address', 'description', 'is_active']
+
+
+class TrainersSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Trainer
+		fields = ['id', 'name', 'description', 'telegram_id', 'is_active']

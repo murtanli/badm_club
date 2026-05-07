@@ -5,6 +5,7 @@ from keyboards.keyboard_start import main_menu_inline
 from keyboards.keyboard_profile_inline import profile_inline
 from keyboards.back_inline import back_inline
 from keyboards.training_subs_inline import training_subs_inline
+from keyboards.choose_schedule_inline import choose_schedule_inline
 
 from services.api_client import get_profile, get_training_subs
 
@@ -20,8 +21,7 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == "menu:schedule")
 async def show_schedule(callback: CallbackQuery):
-	# Здесь позже будет логика выбора тренера или расписания
-	await callback.message.edit_text("📅 Выберите действие:", reply_markup=back_inline())
+	await callback.message.edit_text("📅 Выберите действие:", reply_markup=choose_schedule_inline())
 	await callback.answer()
 
 

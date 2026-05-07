@@ -18,6 +18,18 @@ class TelegramUser(models.Model):
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
 
+class Gym(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Название зала")
+    address = models.CharField(max_length=500, blank=True, null=True, verbose_name="Адрес")
+    description = models.TextField(blank=True, null=True, verbose_name="Описание")
+    is_active = models.BooleanField(default=True, verbose_name="Активен")
+
+    def __str__(self):
+        return f"{self.name} ({self.address})" if self.address else self.name
+
+    class Meta:
+        verbose_name = "Зал"
+        verbose_name_plural = "Залы"
 
 class Trainer(models.Model):
     name = models.CharField(max_length=100, verbose_name="Имя тренера")
@@ -35,18 +47,18 @@ class Trainer(models.Model):
 
 class TrainingSession(models.Model):
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='sessions')
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='sessions', verbose_name="Зал")  # новое
     start_datetime = models.DateTimeField(verbose_name="Начало")
     end_datetime = models.DateTimeField(verbose_name="Окончание")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Стоимость")
     max_participants = models.PositiveSmallIntegerField(verbose_name="Максимум участников")
     is_group = models.BooleanField(default=True, verbose_name="Групповая тренировка")
-    location = models.CharField(max_length=255, blank=True, null=True, verbose_name="Адрес/Корт")
     is_cancelled = models.BooleanField(default=False, verbose_name="Отменена администратором")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.trainer.name} - {self.start_datetime:%d.%m.%Y %H:%M}"
+        return f"{self.trainer.name} - {self.start_datetime:%d.%m.%Y %H:%M} ({self.gym.name})"
 
     class Meta:
         verbose_name = "Тренировка"
@@ -133,3 +145,4 @@ class UserSubscription(models.Model):
     class Meta:
         verbose_name = "Купленный абонемент"
         verbose_name_plural = "Купленные абонементы"
+

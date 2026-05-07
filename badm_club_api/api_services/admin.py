@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
-from .models import TelegramUser, Trainer, TrainingSession, Booking, Transaction, TrainingSubscription, UserSubscription
+from .models import TelegramUser, Trainer, TrainingSession, Booking, Transaction, TrainingSubscription, \
+	UserSubscription, Gym
 
 
 # ---------- Inline-элементы (оставим для удобства) ----------
@@ -67,9 +68,9 @@ class TrainerAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingSession)
 class TrainingSessionAdmin(admin.ModelAdmin):
-	list_display = ('id', 'trainer', 'start_datetime', 'end_datetime',
+	list_display = ('id', 'trainer', 'gym', 'start_datetime', 'end_datetime',
 					'price', 'max_participants', 'is_group', 'is_cancelled')
-	list_filter = ('trainer', 'is_group', 'is_cancelled', 'start_datetime')
+	list_filter = ('trainer', 'gym', 'is_group', 'is_cancelled', 'start_datetime')
 	search_fields = ('trainer__name', 'location')
 	ordering = ('-start_datetime',)
 	inlines = [BookingInline]
@@ -141,3 +142,9 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
 	list_filter = ('is_active', 'subscription')
 	search_fields = ('user__full_name', 'user__telegram_id', 'subscription__name')
 	raw_id_fields = ('user',)
+
+@admin.register(Gym)
+class GymAdmin(admin.ModelAdmin):
+    list_display = ('name', 'address', 'is_active')
+    list_filter = ('is_active',)
+    search_fields = ('name', 'address')

@@ -7,6 +7,8 @@ from .common import router as common_router
 from .base_commands import router as base_commands
 from .menu import router as menu
 from .profile_menu import router as profile_menu
+from .booking import router as booking
+
 router = Router(name=__name__)
 
 router.include_routers(
@@ -14,6 +16,7 @@ router.include_routers(
     menu,
     profile_menu,
     base_commands,
+    booking,
 )
 
 # this one has to be the last!

@@ -64,9 +64,23 @@ async def register_user(telegram_id: int, full_name: str, phone: str, username: 
             return await resp.json()
 
 async def get_subscriptions(telegram_id: int) -> list:
-    """В будущем замени на запрос к DRF"""
+    """В будущем заменить на запрос к DRF"""
     # Пока возвращаем тестовые данные
     return [
         {"id": 1, "name": "Дневной безлимит", "price": 500, "duration": "7 дней"},
         {"id": 2, "name": "Вечерний", "price": 700, "duration": "14 дней"},
     ]
+
+
+async def get_gyms() -> list:
+    async with aiohttp.ClientSession() as s:
+        async with s.get(f"{API_BASE_URL}/gyms/", headers=_headers()) as resp:
+            data = await resp.json()
+            return data.get('gyms', [])
+
+
+async def get_trainers() -> list:
+    async with aiohttp.ClientSession() as s:
+        async with s.get(f"{API_BASE_URL}/trainers/", headers=_headers()) as resp:
+            data = await resp.json()
+            return data.get('trainers', [])

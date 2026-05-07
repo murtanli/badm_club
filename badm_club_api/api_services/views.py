@@ -1,8 +1,18 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import TelegramUser, TrainingSubscription, UserSubscription
-from .serializers import VerifySerializer, RegisterSerializer, TelegramUserSerializer, TrainingSubscriptionSerializer
+from .models import (TelegramUser,
+                     TrainingSubscription,
+                     UserSubscription,
+                     Gym,
+                     Trainer)
+
+from .serializers import (VerifySerializer,
+                          RegisterSerializer,
+                          TelegramUserSerializer,
+                          TrainingSubscriptionSerializer,
+                          GymSerializer,
+                          TrainersSerializer)
 import logging
 
 logger = logging.getLogger("api")
@@ -122,3 +132,16 @@ class GetTrainingSubscription(APIView):
             "available_subscriptions": subs_data,
             "user_subscription": user_sub_info
         }, status=status.HTTP_200_OK)
+
+class GetGyms(APIView):
+    def get(self, request):
+        gyms = Gym.objects.all()
+        serializer = GymSerializer(instance=gyms, many=True)
+        return Response({"gyms": serializer.data}, status=status.HTTP_200_OK)
+
+class GetTrainers(APIView):
+    def get(self, request):
+        trainers = Trainer.objects.all()
+        serializer = TrainersSerializer(instance=trainers, many=True)
+        return Response({"trainers": serializer.data}, status=status.HTTP_200_OK)
+
