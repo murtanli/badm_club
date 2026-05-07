@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  api:
+    build:
+      context: ./badm_club_api
+    #    command: python /usr/src/api/manage.py runserver 0.0.0.0:8100
+    command: gunicorn badm_club_api.wsgi:application --bind 0.0.0.0:8100 --workers 3
+    volumes:
+      - ./badm_club_api:/usr/src/badm_club_api
+    ports:
+      - 8100:8100
+    depends_on:
+      - batm_db
+
+  batm_db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: badmclub
+      POSTGRES_USER: badmclub_ad
+      POSTGRES_PASSWORD: bad_ad_780_api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  batm_bot:
+    build:
+      context: ./badm_club_bot
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./badm_club_bot:/usr/src/badm_club_bot
+#    ports:
+#      - 8050:8050
+#    depends_on:
+#      - redis
+
+volumes:
+  postgres_data:
