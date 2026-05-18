@@ -7,7 +7,7 @@ from .models import (TelegramUser,
                      TrainingSubscription,
                      UserSubscription,
                      Gym,
-                     Trainer, TrainingSession)
+                     Trainer, TrainingSession, Booking)
 
 from .serializers import (VerifySerializer,
                           RegisterSerializer,
@@ -16,7 +16,7 @@ from .serializers import (VerifySerializer,
                           GymSerializer,
                           TrainersSerializer, TrainingSessionSerializer)
 import logging
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Prefetch
 
 logger = logging.getLogger("api")
 
@@ -188,3 +188,40 @@ class GetSportsTraining(APIView):
         serializer = TrainingSessionSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
+
+class GetFullBookingTrainers(APIView):
+    def get(self, request):
+        # Определяем текущую неделю в московском времени
+        now = timezone.now()
+        local_now = timezone.localtime(now)
+        today = local_now.date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        week_start = timezone.make_aware(datetime.combine(start_of_week, datetime.min.time()))
+        week_end = timezone.make_aware(datetime.combine(end_of_week, datetime.max.time()))
+
+        # Базовый QuerySet с фильтром по неделе
+        base_qs = TrainingSession.objects.filter(
+            start_datetime__range=(week_start, week_end)
+        )
+
+        # Оптимизация: подгружаем связанные объекты и аннотируем количество записей
+        qs = base_qs.select_related('trainer', 'gym', 'type') \
+                    .prefetch_related(
+                        Prefetch(
+                            'bookings',
+                            queryset=Booking.objects.filter(status='booked')
+                                                    .select_related('user'),
+                            to_attr='active_bookings'
+                        )
+                    ) \
+                    .annotate(
+                        active_bookings_count=Count(
+                            'bookings',
+                            filter=Q(bookings__status='booked')
+                        )
+                    )
+
+        # Сериализуем
+        serializer = TrainingSessionSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)

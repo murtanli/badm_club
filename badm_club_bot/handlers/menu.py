@@ -75,6 +75,6 @@ async def show_about(callback: CallbackQuery):
 @router.callback_query(F.data == "menu:back")
 async def back_to_start_menu(callback: CallbackQuery):
 	await callback.message.edit_text(
-		f"👋 С возвращением в BadmZone! \n Выберите действие в меню ниже:",
+		f"👋 С возвращением в ALGArithm! \n Выберите действие в меню ниже:",
 		reply_markup=main_menu_inline()
 	)
