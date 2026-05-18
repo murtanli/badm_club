@@ -6,7 +6,7 @@ from services.api_client import check_registration, register_user
 from states.register_state import RegisterStates
 import logging
 
-from keyboards.keyboard_start import main_menu, main_menu_inline
+from keyboards.keyboard_start import main_menu_inline
 
 router = Router(name=__name__)
 logger = logging.getLogger("bot")
@@ -18,12 +18,12 @@ async def start_command(message: Message, state: FSMContext):
 	auth_stat = await check_registration(message.from_user.id)
 	if auth_stat['registered']:
 		await message.answer(
-			f"👋 С возвращением в BadmZone! \n Выберите действие в меню ниже:",
+			f"👋 С возвращением в АЛГАритм! \n Выберите действие в меню ниже:",
 			reply_markup=main_menu_inline()
 		)
 	else:
 		await message.answer(
-			f"👋 Добро пожаловать в BadmZone! Давайте познакомимся! \n 📝 Пожалуйста, введите вашу фамилию и имя:",
+			f"👋 Добро пожаловать в АЛГАритм! Давайте познакомимся! \n 📝 Пожалуйста, введите вашу фамилию и имя:",
 		)
 		await state.set_state(RegisterStates.waiting_for_fio)
 
@@ -54,11 +54,11 @@ async def get_num_phone(message: Message, state: FSMContext):
 		logging.info("save data !")
 		await message.answer(
 			f"✅ Спасибо! Регистрация завершена!",
-			reply_markup=main_menu()
+			reply_markup=main_menu_inline()
 		)
 	else:
 		await message.answer(
 			f"Регистрация не завершена, ошибка \n обратитесь к администратору",
-			reply_markup=main_menu()
+			reply_markup=main_menu_inline()
 		)
 	await state.clear()

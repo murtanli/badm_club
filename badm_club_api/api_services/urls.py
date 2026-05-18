@@ -9,4 +9,5 @@ urlpatterns = [
     path('training-subscriptions/<int:telegram_id>', GetTrainingSubscription.as_view(), name='get_subs'),
     path('gyms/', GetGyms.as_view(), name='get-gyms'),
     path('trainers/', GetTrainers.as_view(), name='get-trainers'),
+    path('sport_training/<str:type>/<int:id>/', GetSportsTraining.as_view(), name='sport_training'),
 ]

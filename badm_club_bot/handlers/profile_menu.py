@@ -4,13 +4,15 @@ from keyboards.keyboard_start import main_menu_inline
 from keyboards.buy_subscription_inline import subscriptions_inline
 import logging
 
+from services.api_client import get_training_subs
+
 logger = logging.getLogger("bot_profile_menu")
 router = Router(name=__name__)
 
 
 @router.callback_query(F.data == "profile:buy_subscription")
 async def buy_subscription(callback: CallbackQuery):
-	markup = await subscriptions_inline(callback.message.from_user.id)
+	markup = await subscriptions_inline(callback.from_user.id)
 	await callback.message.edit_text(
 		f"🎫 Покупка абонемента в зал Бустан \n Выберите количество тренировок:",
 		reply_markup=markup

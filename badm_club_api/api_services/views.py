@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,15 +7,16 @@ from .models import (TelegramUser,
                      TrainingSubscription,
                      UserSubscription,
                      Gym,
-                     Trainer)
+                     Trainer, TrainingSession)
 
 from .serializers import (VerifySerializer,
                           RegisterSerializer,
                           TelegramUserSerializer,
                           TrainingSubscriptionSerializer,
                           GymSerializer,
-                          TrainersSerializer)
+                          TrainersSerializer, TrainingSessionSerializer)
 import logging
+from django.db.models import Count, Q
 
 logger = logging.getLogger("api")
 
@@ -133,15 +136,55 @@ class GetTrainingSubscription(APIView):
             "user_subscription": user_sub_info
         }, status=status.HTTP_200_OK)
 
+
 class GetGyms(APIView):
     def get(self, request):
         gyms = Gym.objects.all()
         serializer = GymSerializer(instance=gyms, many=True)
         return Response({"gyms": serializer.data}, status=status.HTTP_200_OK)
 
+
 class GetTrainers(APIView):
     def get(self, request):
         trainers = Trainer.objects.all()
         serializer = TrainersSerializer(instance=trainers, many=True)
         return Response({"trainers": serializer.data}, status=status.HTTP_200_OK)
+
+
+class GetSportsTraining(APIView):
+    def get(self, request, type, id):
+
+
+        if type not in ('gym', 'trainer'):
+            return Response({"error": "Неверный тип"}, status=400)
+
+        now = timezone.now()
+        local_now = timezone.localtime(now)
+        today = local_now.date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        week_start = timezone.make_aware(datetime.combine(start_of_week, datetime.min.time()))
+        week_end = timezone.make_aware(datetime.combine(end_of_week, datetime.max.time()))
+
+        if type == 'gym':
+            base_qs = TrainingSession.objects.filter(gym_id=id, start_datetime__range=(week_start, week_end))
+        else:  # trainer
+            base_qs = TrainingSession.objects.filter(trainer_id=id, start_datetime__range=(week_start, week_end))
+
+        logger.warning(f"DEBUG: now={now}, today={today}, start_of_week={start_of_week}, end_of_week={end_of_week}")
+        logger.warning(f"DEBUG: week_start={week_start}, week_end={week_end}")
+
+        # Оптимизация: подгружаем связанные модели и аннотируем количество активных записей
+        qs = base_qs.select_related('trainer', 'gym', 'type') \
+                    .prefetch_related('bookings') \
+                    .annotate(
+                        active_bookings_count=Count(
+                            'bookings',
+                            filter=Q(bookings__status='booked')
+                        )
+                    )
+
+        # Передаём аннотированное поле в сериализатор
+        serializer = TrainingSessionSerializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
 

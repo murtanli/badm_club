@@ -7,7 +7,7 @@ def trainers_inline(trainers: list[dict]) -> InlineKeyboardMarkup:
         keyboard.append([
             InlineKeyboardButton(
                 text=trainer['name'],
-                callback_data=f"trainer:{trainer['id']}"
+                callback_data=f"trainer:trainer_booking-{trainer['id']}"
             )
         ])
     keyboard.append([InlineKeyboardButton(text="📊Участники на неделю", callback_data="schedule:on_week_trainers")])
@@ -21,7 +21,7 @@ def gyms_inline(gyms: list[dict]) -> InlineKeyboardMarkup:
         keyboard.append([
             InlineKeyboardButton(
                 text=f"{gym['name']} | {gym['address']}",
-                callback_data=f"gym:{gym['id']}"
+                callback_data=f"gym:gym_booking-{gym['id']}"
             )
         ])
     keyboard.append([InlineKeyboardButton(text="📊Участники на неделю", callback_data="schedule:on_week_gyms")])

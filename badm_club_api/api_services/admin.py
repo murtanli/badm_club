@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 from .models import TelegramUser, Trainer, TrainingSession, Booking, Transaction, TrainingSubscription, \
-	UserSubscription, Gym
+	UserSubscription, Gym, TrainingType
 
 
 # ---------- Inline-элементы (оставим для удобства) ----------
@@ -64,17 +64,30 @@ class TrainerAdmin(admin.ModelAdmin):
 	ordering = ('name',)
 
 
+# --------- Админка TrainingType ----------
+
+@admin.register(TrainingType)
+class TrainingTypeAdmin(admin.ModelAdmin):
+	list_display = ('name', 'price')
+	list_filter = ('name',)
+	search_fields = ('name',)
+	ordering = ('name',)
+
 # ---------- Админка TrainingSession ----------
 
 @admin.register(TrainingSession)
 class TrainingSessionAdmin(admin.ModelAdmin):
-	list_display = ('id', 'trainer', 'gym', 'start_datetime', 'end_datetime',
-					'price', 'max_participants', 'is_group', 'is_cancelled')
-	list_filter = ('trainer', 'gym', 'is_group', 'is_cancelled', 'start_datetime')
-	search_fields = ('trainer__name', 'location')
+	list_display = ('id', 'trainer', 'gym', 'start_datetime', 'type', 'price_display',
+					'max_participants', 'is_group', 'is_cancelled')
+	list_filter = ('trainer', 'gym', 'type', 'is_group', 'is_cancelled', 'start_datetime')
+	search_fields = ('trainer__name', 'gym__name')
 	ordering = ('-start_datetime',)
 	inlines = [BookingInline]
 	actions = ['cancel_session_with_refund']
+
+	@admin.display(description='Цена')
+	def price_display(self, obj):
+		return obj.type.price if obj.type else '-'
 
 	@admin.action(description='Отменить тренировку и вернуть 100%% всем участникам')
 	def cancel_session_with_refund(self, request, queryset):
@@ -83,20 +96,21 @@ class TrainingSessionAdmin(admin.ModelAdmin):
 				continue
 			session.is_cancelled = True
 			session.save()
+			price = session.type.price if session.type else 0
 			for booking in session.bookings.filter(status=Booking.StatusChoices.BOOKED):
 				booking.status = Booking.StatusChoices.CANCELLED
 				booking.cancelled_at = timezone.now()
-				booking.refund_amount = session.price
+				booking.refund_amount = price
 				booking.save()
 				Transaction.objects.create(
 					user=booking.user,
-					amount=session.price,
+					amount=price,
 					type=Transaction.TypeChoices.REFUND,
 					status=Transaction.StatusChoices.SUCCESS,
 					booking=booking,
 					admin=request.user
 				)
-				booking.user.balance += session.price
+				booking.user.balance += price
 				booking.user.save()
 		self.message_user(request, "Тренировки отменены, деньги возвращены.")
 
@@ -143,8 +157,9 @@ class UserSubscriptionAdmin(admin.ModelAdmin):
 	search_fields = ('user__full_name', 'user__telegram_id', 'subscription__name')
 	raw_id_fields = ('user',)
 
+
 @admin.register(Gym)
 class GymAdmin(admin.ModelAdmin):
-    list_display = ('name', 'address', 'is_active')
-    list_filter = ('is_active',)
-    search_fields = ('name', 'address')
+	list_display = ('name', 'address', 'is_active')
+	list_filter = ('is_active',)
+	search_fields = ('name', 'address')
