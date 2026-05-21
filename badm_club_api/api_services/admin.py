@@ -1,5 +1,8 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
+
 from .models import TelegramUser, Trainer, TrainingSession, Booking, Transaction, TrainingSubscription, \
 	UserSubscription, Gym, TrainingType
 
@@ -27,7 +30,7 @@ class TransactionInline(admin.TabularInline):
 
 @admin.register(TelegramUser)
 class TelegramUserAdmin(admin.ModelAdmin):
-	list_display = ('telegram_id', 'full_name', 'phone', 'balance', 'created_at')
+	list_display = ('telegram_id', 'username', 'full_name', 'phone', 'balance', 'created_at')
 	list_filter = ('created_at',)
 	search_fields = ('telegram_id', 'full_name', 'phone', 'username')
 	ordering = ('-created_at',)
@@ -58,10 +61,25 @@ class TelegramUserAdmin(admin.ModelAdmin):
 
 @admin.register(Trainer)
 class TrainerAdmin(admin.ModelAdmin):
-	list_display = ('name', 'is_active', 'telegram_id')
+	list_display = ('name', 'is_active', 'telegram_id', 'photo_preview')
 	list_filter = ('is_active',)
 	search_fields = ('name',)
 	ordering = ('name',)
+	readonly_fields = ('photo_preview',)
+	fields = ('name', 'description', 'telegram_id', 'photo', 'photo_preview', 'is_active')
+
+	def photo_preview(self, obj):
+		"""Показывает миниатюру фото, используя ваше API-представление"""
+		if obj.photo:
+			# Генерируем URL вида /trainer-photo/5/
+			photo_url = reverse('trainer-photo', kwargs={'trainer_id': obj.id})
+			return format_html(
+				'<img src="{}" style="max-width: 100px; max-height: 100px;" />',
+				photo_url
+			)
+		return "Нет фото"
+
+	photo_preview.short_description = "Фото"
 
 
 # --------- Админка TrainingType ----------

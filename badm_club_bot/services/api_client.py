@@ -2,7 +2,7 @@ import os
 import aiohttp
 from utils.config import API_TOKEN, API_BASE_URL
 import logging
-
+logger = logging.getLogger(__name__)
 
 def _headers():
 	return {"Authorization": f"Token {API_TOKEN}"}
@@ -83,6 +83,39 @@ async def get_trainers() -> list:
 
 async def get_sports_training(id: int, type: str) -> list:
 	async with aiohttp.ClientSession() as s:
-		async with s.get(f"{API_BASE_URL}/sport_training/{type}/{id}", headers=_headers()) as resp:
+		async with s.get(f"{API_BASE_URL}/sport_training_list/{type}/{id}", headers=_headers()) as resp:
 			data = await resp.json()
 			return data
+
+
+async def get_full_bookings_on_week():
+	async with aiohttp.ClientSession() as s:
+		async with s.get(f"{API_BASE_URL}/sport_training/full_bookings/", headers=_headers()) as resp:
+			data = await resp.json()
+			return data
+
+
+async def get_session_data(session_id: int, telegram_id: int):
+	async with aiohttp.ClientSession() as s:
+		async with s.get(f"{API_BASE_URL}/training/{session_id}/?telegram_id={telegram_id}",
+						 headers=_headers()) as resp:
+			data = await resp.json()
+			return data
+
+
+async def get_trainer_photo_bytes(trainer_id: int) -> bytes | None:
+    url = f"{API_BASE_URL}/sport_training/trainer-photo/{trainer_id}/"
+    logger.info(f"Запрос фото: {url}")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=_headers()) as resp:
+            logger.info(f"Статус ответа фото: {resp.status}")
+            if resp.status == 200:
+                content_type = resp.headers.get('Content-Type', '')
+                logger.info(f"Content-Type: {content_type}")
+                data = await resp.read()
+                logger.info(f"Размер фото: {len(data)} байт")
+                return data
+            else:
+                text = await resp.text()
+                logger.error(f"Ошибка получения фото: {resp.status} - {text}")
+                return None

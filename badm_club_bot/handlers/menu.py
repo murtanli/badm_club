@@ -21,7 +21,12 @@ router = Router(name=__name__)
 
 @router.callback_query(F.data == "menu:schedule")
 async def show_schedule(callback: CallbackQuery):
-	await callback.message.edit_text("📅 Выберите действие:", reply_markup=choose_schedule_inline())
+	if callback.message.photo:
+		await callback.message.delete()
+		await callback.message.answer("📅 Выберите действие:", reply_markup=choose_schedule_inline())
+	else:
+		await callback.message.edit_text("📅 Выберите действие:", reply_markup=choose_schedule_inline())
+
 	await callback.answer()
 
 
@@ -54,14 +59,22 @@ async def show_profile(callback: CallbackQuery):
 async def show_balance(callback: CallbackQuery):
 	sub = await get_training_subs(callback.from_user.id)
 	text = balance_text(sub['balance'], sub['user_subscription'])
-	await callback.message.edit_text(text, reply_markup=training_subs_inline(sub['available_subscriptions']))
+	if callback.message.photo:
+		await callback.message.delete()
+		await callback.message.answer(text, reply_markup=training_subs_inline(sub['available_subscriptions']))
+	else:
+		await callback.message.edit_text(text, reply_markup=training_subs_inline(sub['available_subscriptions']))
 	await callback.answer()
 
 
 @router.callback_query(F.data == "menu:help")
 async def show_help(callback: CallbackQuery):
 	text = HELP_TEXT
-	await callback.message.edit_text(text, reply_markup=back_inline())
+	if callback.message.photo:
+		await callback.message.delete()
+		await callback.message.answer(text, reply_markup=back_inline())
+	else:
+		await callback.message.edit_text(text, reply_markup=back_inline())
 	await callback.answer()
 
 

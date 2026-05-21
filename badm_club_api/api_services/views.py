@@ -1,6 +1,10 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
+
+from django.http import Http404, FileResponse
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import (TelegramUser,
@@ -14,7 +18,8 @@ from .serializers import (VerifySerializer,
                           TelegramUserSerializer,
                           TrainingSubscriptionSerializer,
                           GymSerializer,
-                          TrainersSerializer, TrainingSessionSerializer)
+                          TrainersSerializer, TrainingSessionSerializer, DailyScheduleSerializer,
+                          TrainingDetailSerializer)
 import logging
 from django.db.models import Count, Q, Prefetch
 
@@ -190,22 +195,26 @@ class GetSportsTraining(APIView):
 
 
 class GetFullBookingTrainers(APIView):
+    """
+    Возвращает список тренировок на текущую неделю, сгруппированный по дням.
+    Для каждой тренировки выдаётся расширенная информация + список участников.
+    """
     def get(self, request):
-        # Определяем текущую неделю в московском времени
+        # 1. Вычисляем границы недели в московском времени
         now = timezone.now()
         local_now = timezone.localtime(now)
         today = local_now.date()
-        start_of_week = today - timedelta(days=today.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
+        start_of_week = today - timedelta(days=today.weekday())      # понедельник
+        end_of_week = start_of_week + timedelta(days=6)             # воскресенье
         week_start = timezone.make_aware(datetime.combine(start_of_week, datetime.min.time()))
         week_end = timezone.make_aware(datetime.combine(end_of_week, datetime.max.time()))
 
-        # Базовый QuerySet с фильтром по неделе
+        # 2. Базовый queryset тренировок за неделю
         base_qs = TrainingSession.objects.filter(
             start_datetime__range=(week_start, week_end)
         )
 
-        # Оптимизация: подгружаем связанные объекты и аннотируем количество записей
+        # 3. Оптимизация: подгрузка связанных данных и аннотация количества записей
         qs = base_qs.select_related('trainer', 'gym', 'type') \
                     .prefetch_related(
                         Prefetch(
@@ -222,6 +231,76 @@ class GetFullBookingTrainers(APIView):
                         )
                     )
 
-        # Сериализуем
-        serializer = TrainingSessionSerializer(qs, many=True, context={'request': request})
+        # 4. Группировка по дате (локальной, уже в МСК)
+        grouped = defaultdict(list)
+        for session in qs:
+            # session.start_datetime уже содержит часовой пояс (МСК благодаря настройкам)
+            local_date = session.start_datetime.date()
+            grouped[local_date].append(session)
+
+        # 5. Преобразуем в список словарей, сортируя по дате
+        grouped_list = []
+        for date, sessions in sorted(grouped.items()):
+            grouped_list.append({
+                'date': date.strftime('%d.%m.%y'),   # например, "20.05.26"
+                'sessions': sessions
+            })
+
+        # 6. Сериализуем и возвращаем
+        serializer = DailyScheduleSerializer(grouped_list, many=True)
+        return Response(serializer.data)
+
+
+class TrainerPhotoView(APIView):
+    def get(self, request, trainer_id):
+        try:
+            trainer = Trainer.objects.get(id=trainer_id)
+        except Trainer.DoesNotExist:
+            raise Http404("Тренер не найден")
+
+        if not trainer.photo:
+            raise Http404("Фото не загружено")
+
+        # Открываем файл и отдаём
+        return FileResponse(trainer.photo.open(), content_type='image/jpeg')
+
+
+class GetTrainingSession(APIView):
+    """
+    Детальная информация о тренировке.
+    Параметры:
+        training_id - в URL,
+        telegram_id - query-параметр для получения баланса пользователя.
+    """
+    def get(self, request, training_id):
+        # Получаем telegram_id из строки запроса
+        telegram_id = request.query_params.get('telegram_id')
+        telegram_user = None
+        if telegram_id:
+            try:
+                telegram_user = TelegramUser.objects.get(telegram_id=telegram_id)
+            except TelegramUser.DoesNotExist:
+                pass  # пользователь не зарегистрирован – баланс будет 0
+
+        # Загружаем тренировку с оптимизацией
+        try:
+            training = TrainingSession.objects.select_related('trainer', 'gym', 'type') \
+                .prefetch_related(
+                    Prefetch(
+                        'bookings',
+                        queryset=Booking.objects.filter(status='booked').select_related('user'),
+                        to_attr='active_bookings'
+                    )
+                ) \
+                .annotate(
+                    bookings_count=Count('bookings', filter=Q(bookings__status='booked'))
+                ) \
+                .get(id=training_id)
+        except TrainingSession.DoesNotExist:
+            return Response({"error": "Тренировка не найдена"}, status=404)
+
+        serializer = TrainingDetailSerializer(training, context={
+            'request': request,
+            'telegram_user': telegram_user
+        })
         return Response(serializer.data)

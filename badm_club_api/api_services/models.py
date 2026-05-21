@@ -38,6 +38,12 @@ class Trainer(models.Model):
 	description = models.TextField(blank=True, null=True, verbose_name="Описание")
 	telegram_id = models.BigIntegerField(blank=True, null=True, verbose_name="Telegram ID тренера")
 	is_active = models.BooleanField(default=True, verbose_name="Активен")
+	photo = models.ImageField(
+		upload_to='trainer_photos/',
+		blank=True,
+		null=True,
+		verbose_name="Фотография"
+	)
 
 	def __str__(self):
 		return self.name
@@ -63,9 +69,8 @@ class TrainingSession(models.Model):
 	trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='sessions')
 	gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='sessions', verbose_name="Зал")  # новое
 	start_datetime = models.DateTimeField(verbose_name="Начало")
-	# end_datetime = models.DateTimeField(verbose_name="Окончание")
-	type = models.ForeignKey(TrainingType, on_delete=models.CASCADE, related_name='training_sessions', null=True,
-							 blank=True)
+	end_datetime = models.DateTimeField(verbose_name="Окончание", blank=True,null=True)
+	type = models.ForeignKey(TrainingType, on_delete=models.CASCADE, related_name='training_sessions', null=True, blank=True)
 	max_participants = models.PositiveSmallIntegerField(verbose_name="Максимум участников")
 	is_group = models.BooleanField(default=True, verbose_name="Групповая тренировка")
 	is_cancelled = models.BooleanField(default=False, verbose_name="Отменена администратором")

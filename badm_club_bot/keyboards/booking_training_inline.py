@@ -27,7 +27,7 @@ def booking_training_inline(training_list: list[dict], callback_type: str) -> In
         keyboard.append([
             InlineKeyboardButton(
                 text=button_text,
-                callback_data=f"buy_subscription:{training['id']}"
+                callback_data=f"training_session:id-{training['id']}"
             )
         ])
 
