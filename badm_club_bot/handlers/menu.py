@@ -1,5 +1,7 @@
 from aiogram import Router, F
+from aiogram.filters import state
 from aiogram.types import CallbackQuery
+from aiogram.fsm. context import FSMContext
 
 from keyboards.keyboard_start import main_menu_inline
 from keyboards.keyboard_profile_inline import profile_inline
@@ -84,10 +86,3 @@ async def show_about(callback: CallbackQuery):
 	await callback.message.edit_text(text, reply_markup=back_inline())
 	await callback.answer()
 
-
-@router.callback_query(F.data == "menu:back")
-async def back_to_start_menu(callback: CallbackQuery):
-	await callback.message.edit_text(
-		f"👋 С возвращением в ALGArithm! \n Выберите действие в меню ниже:",
-		reply_markup=main_menu_inline()
-	)

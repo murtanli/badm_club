@@ -95,7 +95,7 @@ class TrainingTypeAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingSession)
 class TrainingSessionAdmin(admin.ModelAdmin):
-	list_display = ('id', 'trainer', 'gym', 'start_datetime', 'type', 'price_display',
+	list_display = ('id', 'trainer', 'gym', 'start_datetime', 'end_datetime', 'type', 'price_display',
 					'max_participants', 'is_group', 'is_cancelled')
 	list_filter = ('trainer', 'gym', 'type', 'is_group', 'is_cancelled', 'start_datetime')
 	search_fields = ('trainer__name', 'gym__name')

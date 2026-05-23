@@ -9,9 +9,9 @@ def training_subs_inline(training_subs: list[dict]) -> InlineKeyboardMarkup:
 		keyboard.append([
 			InlineKeyboardButton(
 				text=f"🎫 {sub['name']} ({price:.1f} ₽)",
-				callback_data=f"buy_subscription:{sub['id']}"
+				callback_data=f"buy_subscription:id-{sub['id']}"
 			)
 		])
-	keyboard.append([InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="profile:top_up_balance")])
+	keyboard.append([InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="balance:top_up_balance")])
 	keyboard.append([InlineKeyboardButton(text="◀️ Назад", callback_data="menu:back")])
 	return InlineKeyboardMarkup(inline_keyboard=keyboard)

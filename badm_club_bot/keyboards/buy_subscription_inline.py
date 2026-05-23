@@ -15,7 +15,7 @@ async def subscriptions_inline(telegram_id: int) -> InlineKeyboardMarkup:
         keyboard.append([
             InlineKeyboardButton(
                 text=f"🎫 {sub['name']} ({price:.1f} ₽)",
-                callback_data=f"buy_subscription:{sub['id']}"
+                callback_data=f"buy_subscription:id-{sub['id']}"
             )
         ])
 

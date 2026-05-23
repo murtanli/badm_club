@@ -13,4 +13,6 @@ urlpatterns = [
     path('sport_training/full_bookings/', GetFullBookingTrainers.as_view(), name='full_booking_trainers'),
     path('sport_training/trainer-photo/<int:trainer_id>/', TrainerPhotoView.as_view(), name='trainer-photo'),
     path('training/<int:training_id>/', GetTrainingSession.as_view(), name='get-training-session'),
+    path('balance/pay_sub_from_balance/', PaySubFromBalance.as_view(), name='pay-from-balance'),
+    path('booking/create_booking_from_subscription/', CreateBookingSubs.as_view(), name='create-booking-from-subscription')
 ]

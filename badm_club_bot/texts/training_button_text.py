@@ -16,7 +16,7 @@ def get_occupancy_status(occupancy: int) -> str:
 		return "🟠"
 	elif occupancy >= 10:
 		return "🟡"
-	elif occupancy == 0:
+	else:
 		return "🟢"
 
 
