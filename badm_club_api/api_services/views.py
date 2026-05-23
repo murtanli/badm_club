@@ -433,3 +433,35 @@ class CreateBookingSubs(APIView):
 			"booking_id": booking.id,
 			"remaining_trainings": user_sub.remaining
 		}, status=status.HTTP_201_CREATED)
+
+
+class CancelBooking(APIView):
+    def post(self, request):
+        telegram_id = request.data.get('telegram_id')
+        training_session_id = request.data.get('training_session_id')
+
+        # Находим активную запись (статус 'booked')
+        booking = Booking.objects.filter(
+            user__telegram_id=telegram_id,
+            session_id=training_session_id,
+            status='booked'
+        ).first()
+
+        if not booking:
+            return Response({"error": "Активная запись не найдена"}, status=404)
+
+        # Меняем статус и, возможно, возвращаем тренировку в абонемент
+        booking.status = 'cancelled'
+        booking.save()
+
+        # Если нужно вернуть тренировку в абонемент:
+        user_sub = UserSubscription.objects.filter(
+            user=booking.user,
+            is_active=True
+        ).first()
+        if user_sub:
+            user_sub.remaining += 1
+            user_sub.save()
+
+        return Response({"success": True, "message": "Запись отменена"})
+

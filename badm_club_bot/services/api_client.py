@@ -162,3 +162,24 @@ async def post_create_booking_from_subscription(telegram_id: int, training_id: i
         except Exception as e:
             logger.error(f"Исключение при вызове API: {e}", exc_info=True)
             return {"success": False, "error": "Сервис временно недоступен"}
+
+
+async def post_cancel_booking(telegram_id: int, training_session_id: int):
+    """
+    Отменяет запись на тренировку через API.
+    Возвращает словарь с ключами 'success' и 'message' (или 'error' при ошибке).
+    """
+    url = f"{API_BASE_URL}/booking/cancel"
+    payload = {
+        "telegram_id": telegram_id,
+        "training_session_id": training_session_id
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, json=payload, headers=_headers()) as resp:
+            if resp.status in (200, 201):
+                data = await resp.json()
+                return {"success": True, "message": data.get("message", "Запись отменена")}
+            else:
+                error_text = await resp.text()
+                logger.error(f"Ошибка отмены записи (статус {resp.status}): {error_text}")
+                return {"success": False, "error": f"Ошибка сервера {resp.status}"}

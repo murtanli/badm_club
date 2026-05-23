@@ -6,9 +6,12 @@ def booking_training_info(
 		training_id: str,
 		balance: float,
 		cost: float,
-		user_subscription: list | None
+		user_subscription: list | None,
+		participants: list | None,
+		telegram_id: int,
 ) -> InlineKeyboardMarkup:
 	inline_keyboard = []
+	is_not_active = True
 
 	if not_available_stat:
 		inline_keyboard.append(
@@ -16,19 +19,30 @@ def booking_training_info(
 		)
 		return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
 
-	if user_subscription:
-		inline_keyboard.append([
-			InlineKeyboardButton(text="✅ Записаться по абонементу", callback_data=f"create_booking:subscription-{training_id}")
-		])
+	if participants:
+		if list(filter(lambda u: u['telegram_id'] == telegram_id, participants)):
+			inline_keyboard.append(
+				[InlineKeyboardButton(text="❌ Вы уже записаны ( Отменить бронь )",
+									callback_data=f"booking:cancel_booking-{training_id}")]
+			)
+			is_not_active = False
 
-	if balance < cost:
-		inline_keyboard.append([
-			InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="menu:balance")
-		])
-	else:
-		inline_keyboard.append([
-			InlineKeyboardButton(text="✅ Записаться и списать со счета", callback_data="create_booking:subtract_from_balance")
-		])
+	if is_not_active:
+		if user_subscription:
+			inline_keyboard.append([
+				InlineKeyboardButton(text="✅ Записаться по абонементу",
+									callback_data=f"create_booking:subscription-{training_id}")
+			])
+
+		if balance < cost:
+			inline_keyboard.append([
+				InlineKeyboardButton(text="💳 Пополнить баланс", callback_data="menu:balance")
+			])
+		else:
+			inline_keyboard.append([
+				InlineKeyboardButton(text="✅ Записаться и списать со счета",
+									 callback_data="create_booking:subtract_from_balance")
+			])
 
 	inline_keyboard.append(
 		[InlineKeyboardButton(text="❓ Правила отмены", callback_data="menu:help")],

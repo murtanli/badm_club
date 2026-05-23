@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.fsm.context import FSMContext
 
@@ -132,9 +133,20 @@ async def send_training_info(callback: CallbackQuery):
 	if data['max_participants'] == len(data['participants']):
 		not_available = True
 
-	inline_keyboard = booking_training_info(not_available, data['id'], float(data['user_balance']), float(data['cost']), data['user_subscription'])
+	inline_keyboard = booking_training_info(
+		not_available,
+		data['id'],
+		float(data['user_balance']),
+		float(data['cost']),
+		data['user_subscription'],
+		data['participants'],
+		callback.from_user.id
+	)
 
-	await callback.message.delete()
+	try:
+		await callback.message.delete()
+	except TelegramBadRequest as e:
+		logging.error(f"Не удалось удалить сообщение: {e}")
 
 	photo_bytes = await get_trainer_photo_bytes(data.get('trainer'))
 	if photo_bytes:

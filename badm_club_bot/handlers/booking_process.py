@@ -1,10 +1,12 @@
 import logging
 
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import CallbackQuery
 
 from keyboards.back_inline import back_inline
-from services.api_client import get_training_subs, post_pay_sub_from_balance, post_create_booking_from_subscription
+from services.api_client import get_training_subs, post_pay_sub_from_balance, post_create_booking_from_subscription, \
+    post_cancel_booking
 
 from keyboards.back_inline import back_inline
 from keyboards.booking_process_inline import booking_process_inline
@@ -73,7 +75,10 @@ async def create_booking_from_subscription(callback: CallbackQuery):
     training_id = int(callback.data.split("-")[-1])
     user_id = callback.from_user.id
 
-    await callback.message.delete()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest as e:
+        logging.error(f"Не удалось удалить сообщение: {e}")
 
     loading_msg = await callback.message.answer("⏳ Проверяем возможность записи...")
 
@@ -93,4 +98,22 @@ async def create_booking_from_subscription(callback: CallbackQuery):
         text = f"❌ Не удалось записаться: {error_msg}"
         await callback.message.answer(text, reply_markup=back_inline("menu:schedule"))
 
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("booking:cancel_booking-"))
+async def cancel_booking_by_id(callback: CallbackQuery):
+    training_id = int(callback.data.split("-")[-1])
+    result = await post_cancel_booking(callback.from_user.id, training_id)
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest as e:
+        logging.error(f"Не удалось удалить сообщение: {e}")
+
+    if result["success"]:
+        text = result.get("message", "✅ Запись успешно отменена")
+        await callback.message.answer(text, reply_markup=back_inline("menu:profile"))
+    else:
+        text = result.get("error", "❌ Не удалось отменить запись")
+        await callback.message.answer(text)
     await callback.answer()
