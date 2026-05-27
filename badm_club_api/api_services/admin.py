@@ -86,10 +86,16 @@ class TrainerAdmin(admin.ModelAdmin):
 
 @admin.register(TrainingType)
 class TrainingTypeAdmin(admin.ModelAdmin):
-	list_display = ('name', 'price')
+	list_display = ('name', 'price', 'supported_subscription_list')
 	list_filter = ('name',)
 	search_fields = ('name',)
 	ordering = ('name',)
+
+	def supported_subscription_list(self, obj):
+		return ",".join([sub.name for sub in obj.supported_subscription.all()])
+
+	supported_subscription_list.short_description = "Доступные абонементы"
+
 
 # ---------- Админка TrainingSession ----------
 
@@ -137,7 +143,8 @@ class TrainingSessionAdmin(admin.ModelAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-	list_display = ('id', 'user', 'session', 'status', 'created_at', 'cancelled_at', 'refund_amount')
+	list_display = ('id', 'user', 'session', 'status', 'created_at', 'cancelled_at', 'refund_amount', 'payment_method',
+					'user_subscription')
 	list_filter = ('status', 'created_at', 'session__trainer')
 	search_fields = ('user__full_name', 'user__telegram_id', 'session__trainer__name')
 	ordering = ('-created_at',)

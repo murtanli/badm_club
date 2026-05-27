@@ -100,20 +100,50 @@ async def create_booking_from_subscription(callback: CallbackQuery):
 
     await callback.answer()
 
-
-@router.callback_query(F.data.startswith("booking:cancel_booking-"))
-async def cancel_booking_by_id(callback: CallbackQuery):
+@router.callback_query(F.data.startswith("create_booking:subtract_from_balance-"))
+async def create_booking_from_balance(callback: CallbackQuery):
     training_id = int(callback.data.split("-")[-1])
-    result = await post_cancel_booking(callback.from_user.id, training_id)
+    user_id = callback.from_user.id
+
     try:
         await callback.message.delete()
     except TelegramBadRequest as e:
         logging.error(f"Не удалось удалить сообщение: {e}")
 
-    if result["success"]:
-        text = result.get("message", "✅ Запись успешно отменена")
-        await callback.message.answer(text, reply_markup=back_inline("menu:profile"))
+    loading_msg = await callback.message.answer("⏳ Проверяем возможность записи...")
+
+    result = await post_create_booking_from_subscription(user_id, training_id)
+
+    await loading_msg.delete()
+
+    if result.get("success"):
+        remaining = result.get("message")
+        await callback.message.answer(remaining, reply_markup=back_inline())
     else:
-        text = result.get("error", "❌ Не удалось отменить запись")
-        await callback.message.answer(text)
+        error_msg = result.get("error", "Неизвестная ошибка")
+        text = f"❌ Не удалось записаться: {error_msg}"
+        await callback.message.answer(text, reply_markup=back_inline("menu:schedule"))
+
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("booking:cancel_booking-"))
+async def cancel_booking_by_id(callback: CallbackQuery):
+    training_id = int(callback.data.split("-")[-1])
+    result = await post_cancel_booking(callback.from_user.id, training_id)
+
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest as e:
+        logging.error(f"Не удалось удалить сообщение: {e}")
+
+    if result.get("success"):
+        if result.get("refund_done"):
+            text = f"✅ Запись отменена.\n{result.get('refund_message', 'Средства возвращены.')}"
+        else:
+            text = f"⚠️ Запись отменена, но возврат не произведён.\n{result.get('refund_message', 'Средства не возвращены.')}"
+        await callback.message.answer(text, reply_markup=back_inline())
+    else:
+        error_msg = result.get("error", "❌ Не удалось отменить запись")
+        await callback.message.answer(error_msg, reply_markup=back_inline("menu:schedule"))
+
     await callback.answer()

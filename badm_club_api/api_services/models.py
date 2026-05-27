@@ -53,9 +53,25 @@ class Trainer(models.Model):
 		verbose_name_plural = "Тренеры"
 
 
+class TrainingSubscription(models.Model):
+	name = models.CharField(max_length=100, verbose_name="Название")
+	count_training = models.PositiveIntegerField(verbose_name="Количество тренировок")
+	description = models.TextField(blank=True, null=True, verbose_name="Описание")
+	price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Цена")
+
+	def __str__(self):
+		return f"{self.name} ({self.count_training} занятий)"
+
+	class Meta:
+		verbose_name = "Абонемент"
+		verbose_name_plural = "Абонементы"
+
+
 class TrainingType(models.Model):
 	name = models.CharField(max_length=100, verbose_name="Название тренировки")
 	price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Стоимость")
+	supported_subscription = models.ManyToManyField(TrainingSubscription, related_name='supported_subscription',
+													blank=True, null=True, verbose_name="Поддерживаемые абонементы")
 
 	def __str__(self):
 		return self.name
@@ -69,8 +85,9 @@ class TrainingSession(models.Model):
 	trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='sessions')
 	gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='sessions', verbose_name="Зал")  # новое
 	start_datetime = models.DateTimeField(verbose_name="Начало")
-	end_datetime = models.DateTimeField(verbose_name="Окончание", blank=True,null=True)
-	type = models.ForeignKey(TrainingType, on_delete=models.CASCADE, related_name='training_sessions', null=True, blank=True)
+	end_datetime = models.DateTimeField(verbose_name="Окончание", blank=True, null=True)
+	type = models.ForeignKey(TrainingType, on_delete=models.CASCADE, related_name='training_sessions', null=True,
+							 blank=True)
 	max_participants = models.PositiveSmallIntegerField(verbose_name="Максимум участников")
 	is_group = models.BooleanField(default=True, verbose_name="Групповая тренировка")
 	is_cancelled = models.BooleanField(default=False, verbose_name="Отменена администратором")
@@ -89,6 +106,7 @@ class Booking(models.Model):
 	class StatusChoices(models.TextChoices):
 		BOOKED = 'booked', 'Забронировано'
 		CANCELLED = 'cancelled', 'Отменено'
+		COMPLETED = 'completed', 'Посещено'
 
 	user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name='bookings')
 	session = models.ForeignKey(TrainingSession, on_delete=models.CASCADE, related_name='bookings')
@@ -97,6 +115,10 @@ class Booking(models.Model):
 	cancelled_at = models.DateTimeField(blank=True, null=True)
 	refund_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True,
 										verbose_name="Сумма возврата")
+	payment_method = models.CharField(max_length=20, choices=[('subscription', 'Абонемент'), ('balance', 'Баланс')],
+									  blank=True, null=True)
+	user_subscription = models.ForeignKey('UserSubscription', on_delete=models.SET_NULL, null=True, blank=True,
+										  verbose_name="Абонемент, использованный для записи")
 
 	def __str__(self):
 		return f"{self.user.full_name} -> {self.session}"
@@ -110,6 +132,7 @@ class Transaction(models.Model):
 	class TypeChoices(models.TextChoices):
 		DEPOSIT_ONLINE = 'deposit_online', 'Пополнение онлайн'
 		DEPOSIT_CASH = 'deposit_cash', 'Пополнение наличными'
+		PAYMENT_SUB = 'payment_sub', 'Оплата тренировки абонементом'
 		PAYMENT = 'payment', 'Оплата тренировки'
 		REFUND = 'refund', 'Возврат'
 		SUBSCRIPTION_PURCHASE = 'subscription_purchase', 'Покупка абонемента'
@@ -136,20 +159,6 @@ class Transaction(models.Model):
 	class Meta:
 		verbose_name = "Транзакция"
 		verbose_name_plural = "Транзакции"
-
-
-class TrainingSubscription(models.Model):
-	name = models.CharField(max_length=100, verbose_name="Название")
-	count_training = models.PositiveIntegerField(verbose_name="Количество тренировок")
-	description = models.TextField(blank=True, null=True, verbose_name="Описание")
-	price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Цена")
-
-	def __str__(self):
-		return f"{self.name} ({self.count_training} занятий)"
-
-	class Meta:
-		verbose_name = "Абонемент"
-		verbose_name_plural = "Абонементы"
 
 
 class UserSubscription(models.Model):

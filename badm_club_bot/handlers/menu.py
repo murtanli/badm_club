@@ -54,11 +54,12 @@ async def show_profile(callback: CallbackQuery):
 			telegram_id=profile_info['telegram_id'],
 			balance=profile_info['balance'],
 			subscription_status=subs_stat,
-			completed=0
+			completed=profile_info['completed'],
+			active_bookings=profile_info['user_bookings']
 		)
 	else:
 		text = "Профиль не найден. Зарегистрируйтесь /start"
-	await callback.message.edit_text(text, reply_markup=profile_inline())
+	await callback.message.edit_text(text, reply_markup=profile_inline(), parse_mode='Markdown',)
 	await callback.answer()
 
 

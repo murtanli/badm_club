@@ -1,7 +1,7 @@
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import serializers
-from .models import TelegramUser, TrainingSubscription, Gym, Trainer, TrainingSession
+from .models import TelegramUser, TrainingSubscription, Gym, Trainer, TrainingSession, Booking
 
 
 class TelegramUserSerializer(serializers.ModelSerializer):
@@ -9,6 +9,18 @@ class TelegramUserSerializer(serializers.ModelSerializer):
 		model = TelegramUser
 		fields = ['telegram_id', 'username', 'full_name', 'phone', 'balance', 'created_at']
 		read_only_fields = ['balance', 'created_at']
+
+
+class UserBookingSerializer(serializers.ModelSerializer):
+	training_id = serializers.IntegerField(source='session.id')
+	training_name = serializers.CharField(source='session.type.name', default='', read_only=True)
+	start_datetime = serializers.DateTimeField(source='session.start_datetime', format='%d.%m.%Y %H:%M')
+	gym_name = serializers.CharField(source='session.gym.name', read_only=True)
+	trainer_name = serializers.CharField(source='session.trainer.name', read_only=True)
+
+	class Meta:
+		model = Booking
+		fields = ['id', 'training_id', 'training_name', 'start_datetime', 'gym_name', 'trainer_name', 'status']
 
 
 class VerifySerializer(serializers.Serializer):

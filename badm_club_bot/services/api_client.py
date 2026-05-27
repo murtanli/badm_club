@@ -140,7 +140,7 @@ async def post_pay_sub_from_balance(
                 return data
             else:
                 logger.error(f"Ошибка покупки статус - {resp.status}| ответ - {resp.json()}")
-                return resp.json()
+                return await resp.json()
 
 
 async def post_create_booking_from_subscription(telegram_id: int, training_id: int):
@@ -178,7 +178,7 @@ async def post_cancel_booking(telegram_id: int, training_session_id: int):
         async with session.post(url, json=payload, headers=_headers()) as resp:
             if resp.status in (200, 201):
                 data = await resp.json()
-                return {"success": True, "message": data.get("message", "Запись отменена")}
+                return data
             else:
                 error_text = await resp.text()
                 logger.error(f"Ошибка отмены записи (статус {resp.status}): {error_text}")
