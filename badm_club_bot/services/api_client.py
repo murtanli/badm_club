@@ -183,3 +183,22 @@ async def post_cancel_booking(telegram_id: int, training_session_id: int):
                 error_text = await resp.text()
                 logger.error(f"Ошибка отмены записи (статус {resp.status}): {error_text}")
                 return {"success": False, "error": f"Ошибка сервера {resp.status}"}
+
+async def get_tomorrow_bookings():
+    url = f"{API_BASE_URL}/user/notification/tomorrow-training"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=_headers()) as resp:
+            if resp.status == 200:
+                return await resp.json()
+            else:
+                logger.error(f"Ошибка получения завтрашних тренировок: {resp.status}")
+                return []
+
+async def check_is_admin(telegram_id: int) -> bool:
+    url = f"{API_BASE_URL}/admin/check/{telegram_id}/"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=_headers()) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return data.get("is_admin", False)
+            return False

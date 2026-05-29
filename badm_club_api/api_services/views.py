@@ -16,7 +16,7 @@ from .models import (TelegramUser,
                      TrainingSubscription,
                      UserSubscription,
                      Gym,
-                     Trainer, TrainingSession, Booking, Transaction)
+                     Trainer, TrainingSession, Booking, Transaction, TelegramAdmin)
 
 from .serializers import (VerifySerializer,
                           RegisterSerializer,
@@ -607,3 +607,26 @@ class CancelBooking(APIView):
             "refund_done": refund_done,
             "hours_until_start": round(hours_until_start, 2)
         }, status=200)
+
+class TomorrowBookingsView(APIView):
+    def get(self, request):
+        tomorrow = timezone.now().date() + timedelta(days=1)
+        bookings = Booking.objects.filter(
+            session__start_datetime__date=tomorrow,
+            status='booked'
+        ).select_related('user', 'session__type', 'session__gym')
+        data = [
+            {
+                'telegram_id': b.user.telegram_id,
+                'start_time': b.session.start_datetime.strftime('%H:%M'),
+                'type_name': b.session.type.name,
+                'gym_name': b.session.gym.name,
+            }
+            for b in bookings
+        ]
+        return Response(data)
+
+class CheckAdminView(APIView):
+    def get(self, request, telegram_id):
+        is_admin = TelegramAdmin.objects.filter(telegram_id=telegram_id, is_active=True).exists()
+        return Response({"is_admin": is_admin})

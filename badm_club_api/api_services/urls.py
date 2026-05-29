@@ -15,5 +15,7 @@ urlpatterns = [
     path('training/<int:training_id>/', GetTrainingSession.as_view(), name='get-training-session'),
     path('balance/pay_sub_from_balance/', PaySubFromBalance.as_view(), name='pay-from-balance'),
     path('booking/create_booking_from_subscription/', CreateBookingSubs.as_view(), name='create-booking-from-subscription'),
-    path('booking/cancel', CancelBooking.as_view(), name='cancel-booking')
+    path('booking/cancel', CancelBooking.as_view(), name='cancel-booking'),
+    path('user/notification/tomorrow-training/', TomorrowBookingsView.as_view(), name='notification-training'),
+    path('admin/check/<int:telegram_id>/', CheckAdminView.as_view(), name='check-admin'),
 ]

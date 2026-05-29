@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 from .models import TelegramUser, Trainer, TrainingSession, Booking, Transaction, TrainingSubscription, \
-	UserSubscription, Gym, TrainingType
+	UserSubscription, Gym, TrainingType, TelegramAdmin
 
 
 # ---------- Inline-элементы (оставим для удобства) ----------
@@ -188,3 +188,10 @@ class GymAdmin(admin.ModelAdmin):
 	list_display = ('name', 'address', 'is_active')
 	list_filter = ('is_active',)
 	search_fields = ('name', 'address')
+
+
+@admin.register(TelegramAdmin)
+class AdminAdmin(admin.ModelAdmin):
+	list_display = ('telegram_id', 'username', 'name', 'is_active', 'created_at')
+	list_filter = ('is_active',)
+	search_fields = ('telegram_id', 'name')
