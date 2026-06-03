@@ -165,10 +165,6 @@ async def post_create_booking_from_subscription(telegram_id: int, training_id: i
 
 
 async def post_cancel_booking(telegram_id: int, training_session_id: int):
-    """
-    Отменяет запись на тренировку через API.
-    Возвращает словарь с ключами 'success' и 'message' (или 'error' при ошибке).
-    """
     url = f"{API_BASE_URL}/booking/cancel"
     payload = {
         "telegram_id": telegram_id,

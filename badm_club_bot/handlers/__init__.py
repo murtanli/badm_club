@@ -2,23 +2,13 @@ __all__ = ("router",)
 
 from aiogram import Router
 
-from .start import router as start_router
-from .common import router as common_router
-from .menu import router as menu
-from .profile_menu import router as profile_menu
-from .booking import router as booking
-from .top_up_balance import router as top_up_balance
-from .booking_process import router as booking_process
+from .user import router as user_router
+from .admin import router as admin_router
 
 router = Router(name=__name__)
 
 router.include_routers(
-	start_router,
-	menu,
-	profile_menu,
-	booking,
-	top_up_balance,
-	booking_process
+	user_router,
+	admin_router
 )
 
-router.include_router(common_router)

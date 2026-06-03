@@ -626,6 +626,8 @@ class TomorrowBookingsView(APIView):
         ]
         return Response(data)
 
+
+# AdminView
 class CheckAdminView(APIView):
     def get(self, request, telegram_id):
         is_admin = TelegramAdmin.objects.filter(telegram_id=telegram_id, is_active=True).exists()

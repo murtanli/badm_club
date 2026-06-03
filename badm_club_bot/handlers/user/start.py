@@ -2,7 +2,9 @@ from aiogram import Router, flags
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
-from services.api_client import check_registration, register_user
+
+from keyboards.admin_keyboards.admin_panel_inline import admin_panel_inline
+from services.api_client import check_registration, register_user, check_is_admin
 from states.register_state import RegisterStates
 import logging
 
@@ -15,17 +17,21 @@ logger = logging.getLogger("bot")
 @router.message(Command("start"), flags={"dispatcher_only": True})
 async def start_command(message: Message, state: FSMContext):
 	await state.clear()
-	auth_stat = await check_registration(message.from_user.id)
-	if auth_stat['registered']:
-		await message.answer(
-			f"👋 С возвращением в АЛГАритм! \n Выберите действие в меню ниже:",
-			reply_markup=main_menu_inline()
-		)
+	is_admin = await check_is_admin(message.from_user.id)
+	if not is_admin:
+		auth_stat = await check_registration(message.from_user.id)
+		if auth_stat['registered']:
+			await message.answer(
+				f"👋 С возвращением в АЛГАритм! \n Выберите действие в меню ниже:",
+				reply_markup=main_menu_inline()
+			)
+		else:
+			await message.answer(
+				f"👋 Добро пожаловать в АЛГАритм! Давайте познакомимся! \n 📝 Пожалуйста, введите вашу фамилию и имя:",
+			)
+			await state.set_state(RegisterStates.waiting_for_fio)
 	else:
-		await message.answer(
-			f"👋 Добро пожаловать в АЛГАритм! Давайте познакомимся! \n 📝 Пожалуйста, введите вашу фамилию и имя:",
-		)
-		await state.set_state(RegisterStates.waiting_for_fio)
+		await message.answer("Вы админ", reply_markup=admin_panel_inline())
 
 
 @router.message(RegisterStates.waiting_for_fio)

@@ -6,13 +6,11 @@ from aiogram import Dispatcher
 from aiogram.client.default import DefaultBotProperties
 
 from aiogram.enums import ParseMode
-from aiogram.fsm.storage.redis import RedisStorage
 
-from utils.config import BOT_TOKEN, REDIS_URL
+from utils.config import BOT_TOKEN
 from core.logger import setup_logging
 from handlers import router as main_router
 from utils.reminder import daily_reminder_loop
-
 
 async def main():
     setup_logging()
